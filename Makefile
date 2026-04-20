@@ -10,7 +10,8 @@ ARTIFACT_REGISTRY_DOCKER ?= docker-test
 IMAGE_TAG ?= latest
 INSTALL_EXTRAS ?= --all-extras
 
-REGISTRY ?= ${REGION}-docker.pkg.dev/${PROJECT_ID}/${ARTIFACT_REGISTRY_DOCKER}
+REGISTRY ?= $(if $(GCP_REGISTRY),$(GCP_REGISTRY),${REGION}-docker.pkg.dev/${PROJECT_ID}/${ARTIFACT_REGISTRY_DOCKER})
+
 PACKAGE_NAME ?= $(shell grep -m 1 '^name' pyproject.toml | sed -E 's/name = "(.*)"/\1/')
 
 
@@ -59,14 +60,14 @@ help:
 	  '  - Default: ephemeral token via gcloud (never written to disk)' \
 	  '  - Requires authenticated gcloud session (run: gcloud auth login)' \
 	  '  - Local build tag defaults to latest (override with IMAGE_TAG=...)' \
-	  '  - Registry can be overridden with REGISTRY=...'
+	  '  - Registry can be set via GCP_REGISTRY (defaults to ${REGION}-docker.pkg.dev/${PROJECT_ID}/${ARTIFACT_REGISTRY_DOCKER})'
 
 
 build:
-	$(SETUP_EPHEMERAL_GCP_AUTH)
-	REGISTRY="$(REGISTRY)" PACKAGE_NAME="$(PACKAGE_NAME)" IMAGE_TAG="$(IMAGE_TAG)" \
+	@$(SETUP_EPHEMERAL_GCP_AUTH)
+	@REGISTRY="$(REGISTRY)" PACKAGE_NAME="$(PACKAGE_NAME)" IMAGE_TAG="$(IMAGE_TAG)" \
 	  docker compose -f "$(DOCKER_COMPOSE_BUILD_FILE)" build
-	unset UV_INDEX_GCP_USERNAME UV_INDEX_GCP_PASSWORD
+	@unset UV_INDEX_GCP_USERNAME UV_INDEX_GCP_PASSWORD
 
 # --- 0. Requirement Check ---
 check_uv:
@@ -83,7 +84,6 @@ install: check_uv
 	if [ ! -d "$${ENV["ENV_DIR"]}" ]; then
 		echo "Creating environment for $${ENV["PACKAGE"]}..."
 		uv venv "$${ENV["ENV_DIR"]}" --python "$${ENV["PYTHON_VERSION"]}"
-		if [[ -n "$${UV_INDEX_GCP_URL:-}" ]]; then export UV_INDEX_GCP_URL; fi
 		source "$${ENV["ENV_PATH"]}" && uv sync --active $(INSTALL_EXTRAS)
 		echo "Install complete. Use 'make activate' to activate it"
 	else
@@ -102,9 +102,8 @@ update: check_uv
 	fi
 	echo "Updating environment for $${ENV["PACKAGE"]}..."
 	rm -f uv.lock
-	if [[ -n "$${UV_INDEX_GCP_URL:-}" ]]; then export UV_INDEX_GCP_URL; fi
 	uv venv  --clear "$${ENV["ENV_DIR"]}" --python "$${ENV["PYTHON_VERSION"]}"
-	source "$${ENV["ENV_PATH"]}" && uv sync --active --all-extras
+	source "$${ENV["ENV_PATH"]}" && uv sync --active $(INSTALL_EXTRAS)
 	unset UV_INDEX_GCP_USERNAME UV_INDEX_GCP_PASSWORD
 	unset ENV
 	echo "Update complete."

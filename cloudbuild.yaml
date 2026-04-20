@@ -8,6 +8,7 @@ substitutions:
   _ARTIFACT_REGISTRY_DOCKER: ""
   _ARTIFACT_REGISTRY_PYPI: ""
   _IMAGE_NAME: ""
+
 timeout: 2400s
 steps:
   - name: ${_ARTIFACT_REGISTRY_LOCATION}-docker.pkg.dev/$PROJECT_ID/${_ARTIFACT_REGISTRY_DOCKER}/${_IMAGE_NAME}
