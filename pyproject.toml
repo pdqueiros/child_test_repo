@@ -1,0 +1,50 @@
+[project]
+name = "child_test_repo"
+version = "0.0.1"
+description = "Test repo for Scryn"
+authors = [
+    { name = "Pedro Queiros", email = "pedro.queiros@scryn.co" },
+]
+requires-python = ">=3.13,<3.14"
+readme = "README.md"
+maintainers = [
+    { name = "Pedro Queiros", email = "pedro.queiros@scryn.co" },
+]
+dependencies = [
+    "test_repo",
+]
+
+[project.urls]
+Repository = "https://github.com/scryn-co/child_test_repo"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/child_test_repo"]
+
+
+
+[dependency-groups]
+checks = [
+    "pytest",
+    "pytest-cov",
+]
+
+[tool.uv.sources]
+test_repo = { index = "gcp" }
+
+[[tool.uv.index]]
+name = "gcp"
+url = "https://europe-west1-python.pkg.dev/scryn-co/pypi-test/simple/"
+explicit = true
+
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.wheels]
+remote_server_wheels_path = ""
+remote_server_address = ""
+remote_server_port = ""
+
+
+
